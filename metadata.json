@@ -1,0 +1,6 @@
+{
+  "name": "Glowisticbd",
+  "description": "Your Unlimited Glow. Premium cosmetics & skincare collection in Bangladesh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

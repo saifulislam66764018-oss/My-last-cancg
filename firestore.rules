@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // HELPER FUNCTIONS FOR AUTHENTICATION & STRICT SCHEMA VALIDATION
+    // =========================================================================
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password'
+        && (
+          request.auth.uid == "jvpnDzUBPqfEfGiGYBoxQLgPBFo2" ||
+          request.auth.uid == "buYO5SjqICa5yuYz5P648cpb4mr1"
+        );
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string
+        && val.size() >= minLen
+        && val.size() <= maxLen
+        && !val.matches('.*<script.*')
+        && !val.matches('.*javascript:.*');
+    }
+
+    function isOptionalString(data, field, maxLen) {
+      return !(field in data) || data[field] == null || isValidString(data[field], 0, maxLen);
+    }
+
+    function isValidHttpsUrl(url) {
+      return url is string
+        && url.size() >= 10
+        && url.size() <= 2048
+        && url.matches('^https://[^\\s<>"\']+$');
+    }
+
+    function isValidImageSource(url) {
+      return url is string
+        && url.size() >= 10
+        && url.size() <= 750000
+        && (
+          url.matches('^https://[^\\s<>"\']+$') ||
+          url.matches('^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$')
+        );
+    }
+
+    function isOptionalImageSource(data, field) {
+      return !(field in data)
+        || data[field] == null
+        || data[field] == ""
+        || isValidImageSource(data[field]);
+    }
+
+    function isOptionalHttpsUrl(data, field) {
+      return !(field in data)
+        || data[field] == null
+        || data[field] == ""
+        || isValidHttpsUrl(data[field]);
+    }
+
+    function isValidPrice(val) {
+      return val is number
+        && val >= 0
+        && val <= 10000000;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasOnly([
+          'title', 'imageUrl', 'price', 'oldPrice', 'category', 'subCategory',
+          'description', 'available', 'featured', 'newArrival', 'createdAt'
+        ])
+        && isValidString(data.title, 1, 300)
+        && isValidImageSource(data.imageUrl)
+        && isValidPrice(data.price)
+        && (!( 'oldPrice' in data ) || data.oldPrice == null || isValidPrice(data.oldPrice))
+        && isOptionalString(data, 'category', 120)
+        && isOptionalString(data, 'subCategory', 120)
+        && isOptionalString(data, 'description', 4000)
+        && data.available is bool
+        && data.featured is bool
+        && (!( 'newArrival' in data ) || data.newArrival is bool)
+        && data.createdAt is number
+        && data.createdAt >= 0;
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasOnly(['name', 'imageUrl', 'subcategories', 'createdAt'])
+        && isValidString(data.name, 1, 120)
+        && isOptionalImageSource(data, 'imageUrl')
+        && (!( 'subcategories' in data ) || (data.subcategories is list && data.subcategories.size() <= 50))
+        && data.createdAt is number
+        && data.createdAt >= 0;
+    }
+
+    function isValidStoreSettings(data) {
+      return data.keys().hasOnly([
+          'websiteName', 'description', 'tagline', 'whatsappNumber',
+          'deliveryCharge', 'logoUrl', 'faviconUrl', 'heroVideoUrl',
+          'heroMediaType', 'heroProductIds'
+        ])
+        && isOptionalString(data, 'websiteName', 120)
+        && isOptionalString(data, 'description', 600)
+        && isOptionalString(data, 'tagline', 300)
+        && isOptionalString(data, 'whatsappNumber', 30)
+        && (!( 'deliveryCharge' in data ) || isValidPrice(data.deliveryCharge))
+        && isOptionalImageSource(data, 'logoUrl')
+        && isOptionalImageSource(data, 'faviconUrl')
+        && isOptionalHttpsUrl(data, 'heroVideoUrl')
+        && (!( 'heroMediaType' in data ) || data.heroMediaType in ['video', 'image'])
+        && (!( 'heroProductIds' in data ) || (
+             data.heroProductIds is map &&
+             data.heroProductIds.keys().hasOnly(['left1', 'left2', 'right1', 'right2'])
+           ));
+    }
+
+    // =========================================================================
+    // COLLECTION RULES
+    // =========================================================================
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidCategory(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /settings/store {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidStoreSettings(request.resource.data);
+      allow delete: if false; // Prevent accidental deletion of store configuration
+    }
+
+    // Explicit default deny for all other documents/collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

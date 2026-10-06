@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Glowisticbd</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_shop">Shop</string>
+    <string name="nav_categories">Categories</string>
+    <string name="nav_cart">Cart</string>
+    <string name="nav_admin">Admin</string>
+    <string name="empty_products">কোনো পণ্য পাওয়া যায়নি</string>
+    <string name="empty_categories">কোনো ক্যাটাগরি পাওয়া যায়নি</string>
+    <string name="btn_details">বিস্তারিত</string>
+    <string name="btn_order">অর্ডার</string>
+    <string name="btn_whatsapp_order">WhatsApp Order</string>
+    <string name="btn_add_to_cart">Add to Cart</string>
+    <string name="btn_checkout">Checkout</string>
+    <string name="btn_clear_cart">Clear Cart</string>
+    <string name="label_subtotal">Subtotal</string>
+    <string name="label_delivery_charge">Delivery Charge</string>
+    <string name="label_total">Total</string>
+    <string name="status_in_stock">স্টকে আছে (In Stock)</string>
+    <string name="status_out_of_stock">স্টক আউট (Out of Stock)</string>
+    <string name="search_placeholder">পণ্য খুঁজুন (Search by title)...</string>
+</resources>
